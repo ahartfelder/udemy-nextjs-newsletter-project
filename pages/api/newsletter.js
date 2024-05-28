@@ -1,11 +1,9 @@
-import clientPromise from "../../lib/mongodb";
+import { getDocuments, insertDocument } from "../../lib/mongodb";
 
 export default async function handler(req, res) {
-  try {
-    const client = await clientPromise;
-    const db = client.db("newsletter");
-    const collection = db.collection("users");
+  const dbName = "newsletter";
 
+  try {
     const { method, body } = req;
 
     if (method === "POST") {
@@ -16,20 +14,20 @@ export default async function handler(req, res) {
       }
 
       // Verificar se o email já existe
-      const existingUser = await collection.findOne({ email });
-
-      if (existingUser) {
+      const existingUser = await getDocuments(dbName, "users", { email });
+      if (existingUser.length) {
         return res.status(409).json({ message: "Email already exists!" });
       }
 
-      const result = await collection.insertOne({ email });
-      console.log("Inserted:", result);
-      return res.status(201).json({ message: "Signed up!" });
+      const result = await insertDocument(dbName, "users", { email });
+      return res.status(201).json({
+        message: "Signed up!",
+        user: { email, _id: result.insertedId },
+      });
     }
 
     if (method === "GET") {
-      const users = await collection.find({}).toArray();
-      console.log(users);
+      const users = await getDocuments(dbName, "users");
       return res.status(200).json(users);
     }
 

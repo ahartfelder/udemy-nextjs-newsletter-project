@@ -1,19 +1,16 @@
-import clientPromise from "../../../lib/mongodb";
+import { getDocuments, insertDocument } from "../../../lib/mongodb";
 
 export default async function handler(req, res) {
-  try {
-    const client = await clientPromise;
-    const db = client.db("newsletter");
-    const commentsCollection = db.collection("comments");
-    const usersCollection = db.collection("users");
+  const dbName = "newsletter";
 
+  try {
     const { method, query, body } = req;
     const { eventId } = query;
 
     if (method === "POST") {
       const { email, name, text } = body;
 
-      const existingUser = await usersCollection.findOne({ email });
+      const existingUser = await getDocuments(dbName, "users", { email });
       if (!existingUser) {
         return res
           .status(404)
@@ -39,7 +36,7 @@ export default async function handler(req, res) {
         eventId,
       };
 
-      const result = await commentsCollection.insertOne(comment);
+      const result = await insertDocument(dbName, "comments", comment);
 
       return res.status(201).json({
         message: "Comment posted!",
@@ -49,10 +46,12 @@ export default async function handler(req, res) {
         },
       });
     } else if (method === "GET") {
-      const comments = await commentsCollection
-        .find({ eventId })
-        .sort({ _id: -1 })
-        .toArray();
+      const comments = await getDocuments(
+        dbName,
+        "comments",
+        { eventId },
+        { _id: -1 }
+      );
       return res.status(200).json(comments);
     }
 

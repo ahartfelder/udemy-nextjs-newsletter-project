@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       const { email, name, text } = body;
 
       const existingUser = await getDocuments(dbName, "users", { email });
-      if (!existingUser) {
+      if (!existingUser.length) {
         return res
           .status(404)
           .json({ message: "User not registered", comment: null });
